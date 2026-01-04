@@ -5,7 +5,8 @@ import {
   Binary, 
   Regex, 
   GitCompare, 
-  Database 
+  Database,
+  Cpu,
 } from "lucide-react";
 import { registerTool, ToolDefinition } from "./index";
 
@@ -37,6 +38,11 @@ const DiffViewer = dynamic(
 
 const FakerGen = dynamic(
   () => import("@/tools/faker-gen/Component"),
+  { ssr: false }
+);
+
+const IEEE754Viewer = dynamic(
+  () => import("@/tools/ieee754-viewer/Component"),
   { ssr: false }
 );
 
@@ -82,6 +88,14 @@ export const toolConfigs: ToolDefinition[] = [
     icon: Binary,
     description: "Base64、URL、Unicode、进制转换",
     component: MultiCodec,
+    category: "convert",
+  },
+  {
+    id: "ieee754-viewer",
+    name: "IEEE 754",
+    icon: Cpu,
+    description: "浮点数二进制位可视化",
+    component: IEEE754Viewer,
     category: "convert",
   },
   // 测试工具

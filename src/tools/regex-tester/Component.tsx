@@ -11,13 +11,21 @@ import {
 } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Play, Code, Copy, Check } from "lucide-react";
+import { Play, Code, Copy, Check, Server, Loader2, FlaskConical } from "lucide-react";
 
 interface MatchResult {
   index: number;
   match: string;
   groups: string[];
   namedGroups?: Record<string, string>;
+}
+
+interface PythonResult {
+  valid: boolean;
+  matches: MatchResult[];
+  python_code?: string;
+  pytest_code?: string;
+  error?: string;
 }
 
 export default function RegexTesterComponent() {
@@ -28,6 +36,11 @@ export default function RegexTesterComponent() {
   const [error, setError] = useState<string | null>(null);
   const [showCodeGen, setShowCodeGen] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
+  
+  // Python 验证相关状态
+  const [pythonResult, setPythonResult] = useState<PythonResult | null>(null);
+  const [pythonLoading, setPythonLoading] = useState(false);
+  const [showPytest, setShowPytest] = useState(false);
 
   const runTest = useCallback(() => {
     if (!pattern.trim() || !testText) {
@@ -69,6 +82,58 @@ export default function RegexTesterComponent() {
     } catch (e) {
       setError(e instanceof Error ? e.message : "正则表达式错误");
       setResults([]);
+    }
+  }, [pattern, flags, testText]);
+
+  // Python 后端验证
+  const runPythonTest = useCallback(async () => {
+    if (!pattern.trim() || !testText) {
+      return;
+    }
+
+    setPythonLoading(true);
+    setPythonResult(null);
+
+    try {
+      const response = await fetch('/api/regex_test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          pattern,
+          text: testText,
+          flags: flags.replace('g', ''), // Python 没有 g flag
+        }),
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        setPythonResult({
+          valid: data.valid,
+          matches: data.matches.map((m: { index: number; match: string; groups: string[]; groupdict?: Record<string, string> }) => ({
+            index: m.index,
+            match: m.match,
+            groups: m.groups,
+            namedGroups: m.groupdict,
+          })),
+          python_code: data.python_code,
+          pytest_code: data.pytest_code,
+        });
+      } else {
+        setPythonResult({
+          valid: false,
+          matches: [],
+          error: data.error,
+        });
+      }
+    } catch (e) {
+      setPythonResult({
+        valid: false,
+        matches: [],
+        error: 'API 请求失败，请确保已启动 Vercel 开发服务器 (vercel dev)',
+      });
+    } finally {
+      setPythonLoading(false);
     }
   }, [pattern, flags, testText]);
 
@@ -145,15 +210,15 @@ for match in re.finditer(pattern, text, flags):
     }
   }, [pattern, flags, testText]);
 
-  const copyCode = useCallback(async (lang: "typescript" | "python") => {
+  const copyCode = useCallback(async (code: string, type: string) => {
     try {
-      await navigator.clipboard.writeText(generateCode(lang));
-      setCopied(lang);
+      await navigator.clipboard.writeText(code);
+      setCopied(type);
       setTimeout(() => setCopied(null), 2000);
     } catch (e) {
       console.error("复制失败:", e);
     }
-  }, [generateCode]);
+  }, []);
 
   return (
     <ToolLayout>
@@ -183,7 +248,20 @@ for match in re.finditer(pattern, text, flags):
         <ActionGroup>
           <Button onClick={runTest} size="sm">
             <Play className="mr-2 h-4 w-4" />
-            测试
+            JS 测试
+          </Button>
+          <Button 
+            onClick={runPythonTest} 
+            variant="secondary" 
+            size="sm"
+            disabled={pythonLoading}
+          >
+            {pythonLoading ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Server className="mr-2 h-4 w-4" />
+            )}
+            Python 验证
           </Button>
           <Button 
             onClick={() => setShowCodeGen(!showCodeGen)} 
@@ -202,31 +280,69 @@ for match in re.finditer(pattern, text, flags):
         </div>
       )}
 
+      {pythonResult?.error && (
+        <div className="mb-4 rounded-lg border border-orange-500/50 bg-orange-500/10 px-4 py-2 text-sm text-orange-400">
+          Python: {pythonResult.error}
+        </div>
+      )}
+
       {/* 代码生成面板 */}
       {showCodeGen && pattern && (
-        <div className="mb-4 grid grid-cols-2 gap-4">
-          <div className="rounded-lg border border-zinc-800 bg-zinc-900/50">
-            <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-2">
-              <span className="text-sm font-medium text-zinc-400">TypeScript</span>
-              <Button onClick={() => copyCode("typescript")} variant="ghost" size="sm" className="h-7 px-2">
-                {copied === "typescript" ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
-              </Button>
+        <div className="mb-4 space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="rounded-lg border border-zinc-800 bg-zinc-900/50">
+              <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-2">
+                <span className="text-sm font-medium text-zinc-400">TypeScript</span>
+                <Button onClick={() => copyCode(generateCode("typescript"), "typescript")} variant="ghost" size="sm" className="h-7 px-2">
+                  {copied === "typescript" ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
+                </Button>
+              </div>
+              <pre className="overflow-auto p-4 font-mono text-xs text-zinc-300 max-h-48">
+                {generateCode("typescript")}
+              </pre>
             </div>
-            <pre className="overflow-auto p-4 font-mono text-xs text-zinc-300">
-              {generateCode("typescript")}
-            </pre>
-          </div>
-          <div className="rounded-lg border border-zinc-800 bg-zinc-900/50">
-            <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-2">
-              <span className="text-sm font-medium text-zinc-400">Python</span>
-              <Button onClick={() => copyCode("python")} variant="ghost" size="sm" className="h-7 px-2">
-                {copied === "python" ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
-              </Button>
+            <div className="rounded-lg border border-zinc-800 bg-zinc-900/50">
+              <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-2">
+                <span className="text-sm font-medium text-zinc-400">Python</span>
+                <Button onClick={() => copyCode(generateCode("python"), "python")} variant="ghost" size="sm" className="h-7 px-2">
+                  {copied === "python" ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
+                </Button>
+              </div>
+              <pre className="overflow-auto p-4 font-mono text-xs text-zinc-300 max-h-48">
+                {generateCode("python")}
+              </pre>
             </div>
-            <pre className="overflow-auto p-4 font-mono text-xs text-zinc-300">
-              {generateCode("python")}
-            </pre>
           </div>
+
+          {/* Pytest 代码生成 */}
+          {pythonResult?.pytest_code && (
+            <div className="rounded-lg border border-zinc-800 bg-zinc-900/50">
+              <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-2">
+                <div className="flex items-center gap-2">
+                  <FlaskConical className="h-4 w-4 text-green-500" />
+                  <span className="text-sm font-medium text-zinc-400">Pytest 测试用例</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button 
+                    onClick={() => setShowPytest(!showPytest)} 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-7 px-2 text-xs"
+                  >
+                    {showPytest ? "收起" : "展开"}
+                  </Button>
+                  <Button onClick={() => copyCode(pythonResult.pytest_code!, "pytest")} variant="ghost" size="sm" className="h-7 px-2">
+                    {copied === "pytest" ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
+                  </Button>
+                </div>
+              </div>
+              {showPytest && (
+                <pre className="overflow-auto p-4 font-mono text-xs text-zinc-300 max-h-64">
+                  {pythonResult.pytest_code}
+                </pre>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -267,7 +383,22 @@ for match in re.finditer(pattern, text, flags):
           </OutputPanel>
 
           {/* 匹配详情 */}
-          <OutputPanel title={`匹配结果 (${results.length})`} className="flex-1">
+          <OutputPanel 
+            title={
+              <div className="flex items-center gap-4">
+                <span>JS 匹配 ({results.length})</span>
+                {pythonResult && pythonResult.valid && (
+                  <span className="text-xs text-green-400">
+                    Python 匹配 ({pythonResult.matches.length})
+                    {pythonResult.matches.length !== results.length && (
+                      <span className="ml-1 text-yellow-400">⚠️ 结果不一致</span>
+                    )}
+                  </span>
+                )}
+              </div>
+            } 
+            className="flex-1"
+          >
             <ScrollArea className="h-full">
               <div className="p-4">
                 {results.length === 0 ? (
