@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 
 interface InputPanelProps {
-  title: string;
+  title: ReactNode;
   children: ReactNode;
   className?: string;
   onClear?: () => void;
@@ -46,7 +46,7 @@ export function InputPanel({
 }
 
 interface TextInputPanelProps {
-  title: string;
+  title: ReactNode;
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;

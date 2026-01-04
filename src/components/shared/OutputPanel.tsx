@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Copy, Check } from "lucide-react";
 
 interface OutputPanelProps {
-  title: string;
+  title: ReactNode;
   children: ReactNode;
   className?: string;
   copyValue?: string;
@@ -63,7 +63,7 @@ export function OutputPanel({
 }
 
 interface TextOutputPanelProps {
-  title: string;
+  title: ReactNode;
   value: string;
   className?: string;
   extra?: ReactNode;
