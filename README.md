@@ -63,7 +63,7 @@ pip install -r requirements.txt
 
 ```bash
 # 启动 Next.js 并在本地模拟 Vercel API
-vercel dev
+vercel dev  # 或 npm run dev（不含 Python API）
 
 ```
 
@@ -79,7 +79,7 @@ vercel dev
 ## 路线图 (Roadmap)
 
 * [x] **第一阶段**：核心框架搭好，支持 JSON 和 时间戳。
-* [ ] **第二阶段**：基础工具集（Base64, Regex, Diff, Python Faker）。
+* [x] **第二阶段**：基础工具集。
 * [ ] **第三阶段**：C++ 与 CUDA 特色工具（IEEE 754 转换、CUDA 线程索引计算）。
 * [ ] **第四阶段**：支持 Docker 容器化部署。
 

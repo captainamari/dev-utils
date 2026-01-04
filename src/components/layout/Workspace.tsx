@@ -1,7 +1,7 @@
 "use client";
 
 import { useTabStore } from "@/store/useTabStore";
-import { getTool, getAllTools } from "@/registry";
+import { getTool, getToolsByCategory, categories } from "@/registry";
 import { memo, useMemo } from "react";
 import { Wrench } from "lucide-react";
 
@@ -30,35 +30,54 @@ const ToolPanel = memo(function ToolPanel({
 
 // 欢迎页面
 function WelcomePage() {
-  const tools = getAllTools();
   const { openTab } = useTabStore();
+  const toolsByCategory = useMemo(() => getToolsByCategory(), []);
+  const sortedCategories = useMemo(
+    () => [...categories].sort((a, b) => a.order - b.order),
+    []
+  );
 
   return (
-    <div className="flex h-full flex-col items-center justify-center p-8">
+    <div className="flex h-full flex-col items-center overflow-auto py-12 px-8">
       <div className="mb-8 flex h-20 w-20 items-center justify-center rounded-2xl bg-zinc-800/50">
         <Wrench className="h-10 w-10 text-zinc-400" />
       </div>
       <h1 className="mb-2 text-2xl font-bold text-white">开发者工具集</h1>
-      <p className="mb-8 text-center text-zinc-400">
-        选择左侧工具栏中的工具开始使用，提高你的开发效率
+      <p className="mb-10 text-center text-zinc-400">
+        选择下方工具开始使用，提高你的开发效率
       </p>
-      <div className="grid max-w-2xl grid-cols-2 gap-4">
-        {tools.map((tool) => {
-          const Icon = tool.icon;
+
+      <div className="w-full max-w-4xl space-y-8">
+        {sortedCategories.map((category) => {
+          const tools = toolsByCategory.get(category.id) || [];
+          if (tools.length === 0) return null;
+
           return (
-            <button
-              key={tool.id}
-              onClick={() => openTab(tool.id)}
-              className="flex items-center gap-3 rounded-lg border border-zinc-800 bg-zinc-900/50 p-4 text-left transition-all hover:border-zinc-700 hover:bg-zinc-800/50"
-            >
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-zinc-800">
-                <Icon className="h-5 w-5 text-zinc-300" />
+            <div key={category.id}>
+              <h2 className="mb-4 text-sm font-medium uppercase tracking-wider text-zinc-500">
+                {category.name}
+              </h2>
+              <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+                {tools.map((tool) => {
+                  const Icon = tool.icon;
+                  return (
+                    <button
+                      key={tool.id}
+                      onClick={() => openTab(tool.id)}
+                      className="flex items-center gap-3 rounded-lg border border-zinc-800 bg-zinc-900/50 p-4 text-left transition-all hover:border-zinc-700 hover:bg-zinc-800/50"
+                    >
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-zinc-800">
+                        <Icon className="h-5 w-5 text-zinc-300" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-medium text-white truncate">{tool.name}</p>
+                        <p className="text-sm text-zinc-400 truncate">{tool.description}</p>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
-              <div>
-                <p className="font-medium text-white">{tool.name}</p>
-                <p className="text-sm text-zinc-400">{tool.description}</p>
-              </div>
-            </button>
+            </div>
           );
         })}
       </div>
