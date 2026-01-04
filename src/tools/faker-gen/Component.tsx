@@ -282,7 +282,7 @@ export default function FakerGenComponent() {
             {results.length === 0 ? (
               <div className="flex h-full items-center justify-center p-4">
                 <span className="text-sm text-zinc-500">
-                  选择字段后点击"生成数据"
+                  选择字段后点击「生成数据」
                 </span>
               </div>
             ) : (
