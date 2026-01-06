@@ -5,6 +5,125 @@ import Editor from "@monaco-editor/react";
 import { Button } from "@/components/ui/button";
 import { Copy, Check, Minimize2, Maximize2, AlertCircle } from "lucide-react";
 
+/**
+ * 将 Python 风格的字典字符串转换为标准 JSON
+ * 处理：单引号 -> 双引号，True/False -> true/false，None -> null
+ */
+function pythonDictToJson(input: string): string {
+  let result = input;
+  
+  // 状态机解析，正确处理字符串内外的内容
+  let output = "";
+  let i = 0;
+  
+  while (i < result.length) {
+    const char = result[i];
+    
+    // 处理单引号字符串
+    if (char === "'") {
+      output += '"';
+      i++;
+      // 读取字符串内容直到遇到未转义的单引号
+      while (i < result.length) {
+        const innerChar = result[i];
+        if (innerChar === "\\") {
+          // 处理转义字符
+          if (i + 1 < result.length) {
+            const nextChar = result[i + 1];
+            if (nextChar === "'") {
+              // \' -> ' (在 JSON 中单引号不需要转义)
+              output += "'";
+              i += 2;
+            } else if (nextChar === '"') {
+              // \" -> \" (保持双引号转义)
+              output += '\\"';
+              i += 2;
+            } else {
+              // 其他转义字符保持原样
+              output += innerChar + nextChar;
+              i += 2;
+            }
+          } else {
+            output += innerChar;
+            i++;
+          }
+        } else if (innerChar === '"') {
+          // 字符串内的双引号需要转义
+          output += '\\"';
+          i++;
+        } else if (innerChar === "'") {
+          // 字符串结束
+          output += '"';
+          i++;
+          break;
+        } else {
+          output += innerChar;
+          i++;
+        }
+      }
+    }
+    // 处理双引号字符串（保持原样，但需要跳过内容）
+    else if (char === '"') {
+      output += char;
+      i++;
+      while (i < result.length) {
+        const innerChar = result[i];
+        if (innerChar === "\\") {
+          output += innerChar;
+          i++;
+          if (i < result.length) {
+            output += result[i];
+            i++;
+          }
+        } else if (innerChar === '"') {
+          output += innerChar;
+          i++;
+          break;
+        } else {
+          output += innerChar;
+          i++;
+        }
+      }
+    }
+    // 处理 True/False/None（仅在字符串外部）
+    else if (result.slice(i, i + 4) === "True" && !isIdentifierChar(result[i - 1]) && !isIdentifierChar(result[i + 4])) {
+      output += "true";
+      i += 4;
+    } else if (result.slice(i, i + 5) === "False" && !isIdentifierChar(result[i - 1]) && !isIdentifierChar(result[i + 5])) {
+      output += "false";
+      i += 5;
+    } else if (result.slice(i, i + 4) === "None" && !isIdentifierChar(result[i - 1]) && !isIdentifierChar(result[i + 4])) {
+      output += "null";
+      i += 4;
+    }
+    else {
+      output += char;
+      i++;
+    }
+  }
+  
+  return output;
+}
+
+function isIdentifierChar(char: string | undefined): boolean {
+  if (!char) return false;
+  return /[a-zA-Z0-9_]/.test(char);
+}
+
+/**
+ * 智能解析 JSON，支持标准 JSON 和 Python 字典格式
+ */
+function smartParseJson(input: string): unknown {
+  // 先尝试标准 JSON 解析
+  try {
+    return JSON.parse(input);
+  } catch {
+    // 标准解析失败，尝试 Python 字典格式转换
+    const converted = pythonDictToJson(input);
+    return JSON.parse(converted);
+  }
+}
+
 export default function JsonFormatterComponent() {
   const [input, setInput] = useState("");
   const [output, setOutput] = useState("");
@@ -20,7 +139,7 @@ export default function JsonFormatterComponent() {
     }
 
     try {
-      const parsed = JSON.parse(input);
+      const parsed = smartParseJson(input);
       const formatted = JSON.stringify(parsed, null, indentSize);
       setOutput(formatted);
       setError(null);
@@ -38,7 +157,7 @@ export default function JsonFormatterComponent() {
     }
 
     try {
-      const parsed = JSON.parse(input);
+      const parsed = smartParseJson(input);
       const minified = JSON.stringify(parsed);
       setOutput(minified);
       setError(null);
