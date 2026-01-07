@@ -3,7 +3,7 @@
 import { useState, useCallback } from "react";
 import Editor from "@monaco-editor/react";
 import { Button } from "@/components/ui/button";
-import { Copy, Check, Minimize2, Maximize2, AlertCircle } from "lucide-react";
+import { Copy, Check, Minimize2, Maximize2, AlertCircle, Trash2 } from "lucide-react";
 
 /**
  * 将 Python 风格的字典字符串转换为标准 JSON
@@ -183,6 +183,12 @@ export default function JsonFormatterComponent() {
     setError(null);
   }, []);
 
+  const clearAll = useCallback(() => {
+    setInput("");
+    setOutput("");
+    setError(null);
+  }, []);
+
   return (
     <div className="flex h-full flex-col p-4">
       {/* 工具栏 */}
@@ -195,6 +201,10 @@ export default function JsonFormatterComponent() {
           <Button onClick={minifyJson} variant="secondary" size="sm" className="gap-2">
             <Minimize2 className="h-4 w-4" />
             压缩
+          </Button>
+          <Button onClick={clearAll} variant="ghost" size="sm" className="gap-2 text-zinc-400 hover:text-white">
+            <Trash2 className="h-4 w-4" />
+            清空
           </Button>
         </div>
 
