@@ -7,6 +7,9 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "Dev Utils - 开发者工具集",
   description: "提高日常开发效率的在线工具集",
+  icons: {
+    icon: "/favicon.svg",
+  },
 };
 
 export default function RootLayout({

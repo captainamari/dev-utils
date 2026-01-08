@@ -65,14 +65,14 @@ export const toolConfigs: ToolDefinition[] = [
     component: DiffViewer,
     category: "code",
   },
-  {
-    id: "regex-tester",
-    name: "正则测试",
-    icon: Regex,
-    description: "测试正则表达式并生成代码",
-    component: RegexTester,
-    category: "code",
-  },
+  // {
+  //   id: "regex-tester",
+  //   name: "正则测试",
+  //   icon: Regex,
+  //   description: "测试正则表达式并生成代码",
+  //   component: RegexTester,
+  //   category: "code",
+  // },
   // 基础转换
   {
     id: "timestamp-convert",
