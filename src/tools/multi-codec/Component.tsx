@@ -11,6 +11,7 @@ import {
 } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { ArrowRightLeft, ArrowUpDown } from "lucide-react";
+import { useLanguage } from "@/i18n";
 
 type CodecMode = 
   | "base64" 
@@ -26,25 +27,6 @@ interface CodecOption {
   label: string;
   description: string;
 }
-
-const codecOptions: CodecOption[] = [
-  { value: "base64", label: "Base64", description: "Base64 编码/解码" },
-  { value: "url", label: "URL 编码", description: "URL 编码/解码" },
-  { value: "unicode", label: "Unicode", description: "Unicode 转中文/中文转 Unicode" },
-  { value: "hex", label: "十六进制", description: "文本与十六进制互转" },
-  { value: "binary", label: "二进制", description: "文本与二进制互转" },
-  { value: "octal", label: "八进制", description: "文本与八进制互转" },
-  { value: "base64-to-hex", label: "进制转换", description: "支持 2/8/10/16/64 进制互转" },
-];
-
-// 进制转换选项
-const radixOptions = [
-  { value: 2, label: "二进制" },
-  { value: 8, label: "八进制" },
-  { value: 10, label: "十进制" },
-  { value: 16, label: "十六进制" },
-  { value: 64, label: "Base64" },
-];
 
 // Base64 字符表
 const BASE64_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -75,13 +57,13 @@ function bigIntToRadix(num: bigint, radix: number): string {
   return result;
 }
 
-function radixToBigInt(str: string, radix: number): bigint {
+function radixToBigInt(str: string, radix: number, t: ReturnType<typeof useLanguage>['t']): bigint {
   if (radix === 64) {
     // Base64 解码
     let result = 0n;
     for (const char of str) {
       const index = BASE64_CHARS.indexOf(char);
-      if (index === -1) throw new Error(`无效的 Base64 字符: ${char}`);
+      if (index === -1) throw new Error(`${t.multiCodec.invalidBase64Char}: ${char}`);
       result = result * 64n + BigInt(index);
     }
     return result;
@@ -97,6 +79,27 @@ export default function MultiCodecComponent() {
   const [error, setError] = useState<string | null>(null);
   const [fromRadix, setFromRadix] = useState(10);
   const [toRadix, setToRadix] = useState(16);
+  const { t } = useLanguage();
+
+  // 动态生成 codec 选项
+  const codecOptions: CodecOption[] = useMemo(() => [
+    { value: "base64", label: t.multiCodec.base64, description: t.multiCodec.base64Desc },
+    { value: "url", label: t.multiCodec.urlEncode, description: t.multiCodec.urlEncodeDesc },
+    { value: "unicode", label: t.multiCodec.unicode, description: t.multiCodec.unicodeDesc },
+    { value: "hex", label: t.multiCodec.hex, description: t.multiCodec.hexDesc },
+    { value: "binary", label: t.multiCodec.binary, description: t.multiCodec.binaryDesc },
+    { value: "octal", label: t.multiCodec.octal, description: t.multiCodec.octalDesc },
+    { value: "base64-to-hex", label: t.multiCodec.radixConvert, description: t.multiCodec.radixConvertDesc },
+  ], [t]);
+
+  // 动态生成进制选项
+  const radixOptions = useMemo(() => [
+    { value: 2, label: t.multiCodec.binary },
+    { value: 8, label: t.multiCodec.octal },
+    { value: 10, label: t.ieee754.decimal },
+    { value: 16, label: t.multiCodec.hex },
+    { value: 64, label: "Base64" },
+  ], [t]);
 
   const encode = useCallback(() => {
     if (!input.trim()) {
@@ -136,17 +139,17 @@ export default function MultiCodecComponent() {
             .join(" ");
           break;
         case "base64-to-hex":
-          const num = radixToBigInt(input.trim(), fromRadix);
+          const num = radixToBigInt(input.trim(), fromRadix, t);
           result = bigIntToRadix(num, toRadix);
           break;
       }
       setOutput(result);
       setError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "编码错误");
+      setError(e instanceof Error ? e.message : t.multiCodec.encodeError);
       setOutput("");
     }
-  }, [input, mode, fromRadix, toRadix]);
+  }, [input, mode, fromRadix, toRadix, t]);
 
   const decode = useCallback(() => {
     if (!input.trim()) {
@@ -189,17 +192,17 @@ export default function MultiCodecComponent() {
           break;
         case "base64-to-hex":
           // 进制转换模式下，解码就是反向转换
-          const num = radixToBigInt(input.trim(), toRadix);
+          const num = radixToBigInt(input.trim(), toRadix, t);
           result = bigIntToRadix(num, fromRadix);
           break;
       }
       setOutput(result);
       setError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "解码错误");
+      setError(e instanceof Error ? e.message : t.multiCodec.decodeError);
       setOutput("");
     }
-  }, [input, mode, fromRadix, toRadix]);
+  }, [input, mode, fromRadix, toRadix, t]);
 
   const swapRadix = useCallback(() => {
     setFromRadix(toRadix);
@@ -208,14 +211,14 @@ export default function MultiCodecComponent() {
 
   const currentCodec = useMemo(() => 
     codecOptions.find(o => o.value === mode), 
-    [mode]
+    [mode, codecOptions]
   );
 
   return (
     <ToolLayout>
       <ToolHeader>
         <div className="flex items-center gap-2">
-          <span className="text-sm text-zinc-400">编码类型:</span>
+          <span className="text-sm text-zinc-400">{t.multiCodec.codecType}:</span>
           <select
             value={mode}
             onChange={(e) => {
@@ -267,11 +270,11 @@ export default function MultiCodecComponent() {
         <ActionGroup className="ml-auto">
           <Button onClick={encode} size="sm">
             <ArrowRightLeft className="mr-2 h-4 w-4" />
-            编码
+            {t.common.encode}
           </Button>
           <Button onClick={decode} variant="secondary" size="sm">
             <ArrowRightLeft className="mr-2 h-4 w-4 rotate-180" />
-            解码
+            {t.common.decode}
           </Button>
         </ActionGroup>
       </ToolHeader>
@@ -284,13 +287,13 @@ export default function MultiCodecComponent() {
 
       <ToolContent>
         <TextInputPanel
-          title="输入"
+          title={t.common.input}
           value={input}
           onChange={setInput}
-          placeholder="输入要编码或解码的内容..."
+          placeholder={t.multiCodec.inputPlaceholder}
         />
         <TextOutputPanel
-          title="输出"
+          title={t.common.output}
           value={output}
         />
       </ToolContent>

@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Play, Download, Loader2, Check, Copy, RefreshCw } from "lucide-react";
+import { useLanguage } from "@/i18n";
 
 interface FieldOption {
   id: string;
@@ -22,27 +23,29 @@ interface GeneratedData {
   [key: string]: string;
 }
 
-// 默认可用字段（当 API 不可用时使用）
-const defaultFields: FieldOption[] = [
-  { id: 'name', label: '姓名', category: '个人信息' },
-  { id: 'phone', label: '电话', category: '个人信息' },
-  { id: 'email', label: '邮箱', category: '个人信息' },
-  { id: 'address', label: '地址', category: '个人信息' },
-  { id: 'company', label: '公司', category: '工作' },
-  { id: 'job', label: '职位', category: '工作' },
-  { id: 'username', label: '用户名', category: '账户' },
-  { id: 'password', label: '密码', category: '账户' },
-  { id: 'uuid', label: 'UUID', category: '标识' },
-  { id: 'url', label: 'URL', category: '网络' },
-  { id: 'ipv4', label: 'IPv4', category: '网络' },
-  { id: 'date', label: '日期', category: '时间' },
-  { id: 'datetime', label: '日期时间', category: '时间' },
-  { id: 'text', label: '文本', category: '文本' },
-  { id: 'city', label: '城市', category: '地理' },
-  { id: 'country', label: '国家', category: '地理' },
-];
-
 export default function FakerGenComponent() {
+  const { t } = useLanguage();
+  
+  // 默认可用字段（当 API 不可用时使用）
+  const defaultFields: FieldOption[] = [
+    { id: 'name', label: t.fakerGen.fields.name, category: t.fakerGen.fieldCategories.personal },
+    { id: 'phone', label: t.fakerGen.fields.phone, category: t.fakerGen.fieldCategories.personal },
+    { id: 'email', label: t.fakerGen.fields.email, category: t.fakerGen.fieldCategories.personal },
+    { id: 'address', label: t.fakerGen.fields.address, category: t.fakerGen.fieldCategories.personal },
+    { id: 'company', label: t.fakerGen.fields.company, category: t.fakerGen.fieldCategories.work },
+    { id: 'job', label: t.fakerGen.fields.job, category: t.fakerGen.fieldCategories.work },
+    { id: 'username', label: t.fakerGen.fields.username, category: t.fakerGen.fieldCategories.account },
+    { id: 'password', label: t.fakerGen.fields.password, category: t.fakerGen.fieldCategories.account },
+    { id: 'uuid', label: t.fakerGen.fields.uuid, category: t.fakerGen.fieldCategories.identifier },
+    { id: 'url', label: t.fakerGen.fields.url, category: t.fakerGen.fieldCategories.network },
+    { id: 'ipv4', label: t.fakerGen.fields.ipv4, category: t.fakerGen.fieldCategories.network },
+    { id: 'date', label: t.fakerGen.fields.date, category: t.fakerGen.fieldCategories.time },
+    { id: 'datetime', label: t.fakerGen.fields.datetime, category: t.fakerGen.fieldCategories.time },
+    { id: 'text', label: t.fakerGen.fields.text, category: t.fakerGen.fieldCategories.text },
+    { id: 'city', label: t.fakerGen.fields.city, category: t.fakerGen.fieldCategories.geography },
+    { id: 'country', label: t.fakerGen.fields.country, category: t.fakerGen.fieldCategories.geography },
+  ];
+
   const [availableFields, setAvailableFields] = useState<FieldOption[]>(defaultFields);
   const [selectedFields, setSelectedFields] = useState<string[]>(['name', 'phone', 'email']);
   const [count, setCount] = useState(10);
@@ -65,8 +68,9 @@ export default function FakerGenComponent() {
       .catch(() => {
         // API 不可用时使用默认字段
         console.log('Using default fields');
+        setAvailableFields(defaultFields);
       });
-  }, []);
+  }, [defaultFields]);
 
   // 按分类分组字段
   const groupedFields = availableFields.reduce((acc, field) => {
@@ -87,7 +91,7 @@ export default function FakerGenComponent() {
 
   const generate = useCallback(async () => {
     if (selectedFields.length === 0) {
-      setError('请至少选择一个字段');
+      setError(t.fakerGen.selectAtLeastOne);
       return;
     }
 
@@ -110,14 +114,14 @@ export default function FakerGenComponent() {
       if (data.success) {
         setResults(data.data);
       } else {
-        setError(data.error || '生成失败');
+        setError(data.error || t.fakerGen.generateFailed);
       }
     } catch (e) {
-      setError('API 请求失败，请确保已启动 Vercel 开发服务器 (vercel dev)');
+      setError(t.fakerGen.apiError);
     } finally {
       setLoading(false);
     }
-  }, [selectedFields, count, locale]);
+  }, [selectedFields, count, locale, t]);
 
   // 格式化输出
   const formattedOutput = useCallback(() => {
@@ -141,9 +145,9 @@ export default function FakerGenComponent() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (e) {
-      console.error('复制失败:', e);
+      console.error(t.jsonFormatter.copyFailed, e);
     }
-  }, [formattedOutput]);
+  }, [formattedOutput, t]);
 
   const downloadFile = useCallback(() => {
     const content = formattedOutput();
@@ -163,19 +167,19 @@ export default function FakerGenComponent() {
       <ToolHeader>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            <span className="text-sm text-zinc-400">语言:</span>
+            <span className="text-sm text-zinc-400">{t.fakerGen.dataLanguage}:</span>
             <select
               value={locale}
               onChange={(e) => setLocale(e.target.value)}
               className="rounded border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-sm text-white"
             >
-              <option value="zh_CN">中文</option>
-              <option value="en_US">英文</option>
+              <option value="zh_CN">{t.fakerGen.chinese}</option>
+              <option value="en_US">{t.fakerGen.english}</option>
             </select>
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-sm text-zinc-400">数量:</span>
+            <span className="text-sm text-zinc-400">{t.common.count}:</span>
             <input
               type="number"
               value={count}
@@ -187,7 +191,7 @@ export default function FakerGenComponent() {
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-sm text-zinc-400">格式:</span>
+            <span className="text-sm text-zinc-400">{t.fakerGen.outputFormat}:</span>
             <select
               value={outputFormat}
               onChange={(e) => setOutputFormat(e.target.value as 'json' | 'csv')}
@@ -206,17 +210,17 @@ export default function FakerGenComponent() {
             ) : (
               <Play className="mr-2 h-4 w-4" />
             )}
-            生成数据
+            {t.common.generateData}
           </Button>
           {results.length > 0 && (
             <>
               <Button onClick={copyToClipboard} variant="outline" size="sm">
                 {copied ? <Check className="mr-2 h-4 w-4 text-green-500" /> : <Copy className="mr-2 h-4 w-4" />}
-                复制
+                {t.common.copy}
               </Button>
               <Button onClick={downloadFile} variant="outline" size="sm">
                 <Download className="mr-2 h-4 w-4" />
-                下载
+                {t.common.download}
               </Button>
             </>
           )}
@@ -234,7 +238,7 @@ export default function FakerGenComponent() {
         <div className="flex flex-col overflow-hidden rounded-lg border border-zinc-800">
           <div className="flex items-center justify-between border-b border-zinc-800 bg-zinc-900 px-4 py-2">
             <span className="text-sm font-medium text-zinc-400">
-              选择字段 ({selectedFields.length} 已选)
+              {t.common.selectField} ({selectedFields.length} {t.common.selected})
             </span>
             <Button
               onClick={() => setSelectedFields([])}
@@ -275,14 +279,14 @@ export default function FakerGenComponent() {
 
         {/* 输出区 */}
         <OutputPanel 
-          title={`生成结果 (${results.length} 条)`}
+          title={`${t.common.result} (${results.length} ${t.common.records})`}
           copyValue={results.length > 0 ? formattedOutput() : undefined}
         >
           <ScrollArea className="h-full">
             {results.length === 0 ? (
               <div className="flex h-full items-center justify-center p-4">
                 <span className="text-sm text-zinc-500">
-                  选择字段后点击「生成数据」
+                  {t.fakerGen.clickToGenerate}
                 </span>
               </div>
             ) : (

@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Copy, Check, RefreshCw, ArrowRightLeft } from "lucide-react";
+import { useLanguage } from "@/i18n";
 
 export default function TimestampConvertComponent() {
   const [timestamp, setTimestamp] = useState("");
@@ -10,6 +11,7 @@ export default function TimestampConvertComponent() {
   const [currentTimestamp, setCurrentTimestamp] = useState(0);
   const [copied, setCopied] = useState<string | null>(null);
   const [unit, setUnit] = useState<"s" | "ms">("s");
+  const { t, locale } = useLanguage();
 
   // 更新当前时间戳
   useEffect(() => {
@@ -37,7 +39,7 @@ export default function TimestampConvertComponent() {
       if (isNaN(date.getTime())) return;
 
       // 格式化为本地时间字符串
-      const formatted = date.toLocaleString("zh-CN", {
+      const formatted = date.toLocaleString(locale === 'zh-CN' ? "zh-CN" : "en-US", {
         year: "numeric",
         month: "2-digit",
         day: "2-digit",
@@ -50,7 +52,7 @@ export default function TimestampConvertComponent() {
     } catch (e) {
       console.error(e);
     }
-  }, [timestamp, unit]);
+  }, [timestamp, unit, locale]);
 
   // 日期转时间戳
   const dateToTimestamp = useCallback(() => {
@@ -74,7 +76,7 @@ export default function TimestampConvertComponent() {
     setTimestamp(ts.toString());
     const date = new Date(currentTimestamp * 1000);
     setDatetime(
-      date.toLocaleString("zh-CN", {
+      date.toLocaleString(locale === 'zh-CN' ? "zh-CN" : "en-US", {
         year: "numeric",
         month: "2-digit",
         day: "2-digit",
@@ -84,7 +86,7 @@ export default function TimestampConvertComponent() {
         hour12: false,
       })
     );
-  }, [currentTimestamp, unit]);
+  }, [currentTimestamp, unit, locale]);
 
   // 复制到剪贴板
   const copyToClipboard = useCallback(async (text: string, type: string) => {
@@ -93,9 +95,9 @@ export default function TimestampConvertComponent() {
       setCopied(type);
       setTimeout(() => setCopied(null), 2000);
     } catch (e) {
-      console.error("复制失败:", e);
+      console.error(t.jsonFormatter.copyFailed, e);
     }
-  }, []);
+  }, [t]);
 
   return (
     <div className="flex h-full flex-col p-6">
@@ -104,21 +106,21 @@ export default function TimestampConvertComponent() {
         <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-zinc-400">当前 Unix 时间戳</p>
+              <p className="text-sm text-zinc-400">{t.timestampConvert.currentTimestamp}</p>
               <p className="mt-1 font-mono text-2xl text-white">
                 {currentTimestamp}
               </p>
             </div>
             <Button onClick={useCurrentTimestamp} variant="outline" size="sm">
               <RefreshCw className="mr-2 h-4 w-4" />
-              使用当前时间
+              {t.timestampConvert.useCurrentTime}
             </Button>
           </div>
         </div>
 
         {/* 单位选择 */}
         <div className="flex items-center gap-4">
-          <span className="text-sm text-zinc-400">时间戳单位:</span>
+          <span className="text-sm text-zinc-400">{t.timestampConvert.timestampUnit}:</span>
           <div className="flex rounded-lg border border-zinc-700 p-1">
             <button
               onClick={() => setUnit("s")}
@@ -128,7 +130,7 @@ export default function TimestampConvertComponent() {
                   : "text-zinc-400 hover:text-white"
               }`}
             >
-              秒 (s)
+              {t.common.second} (s)
             </button>
             <button
               onClick={() => setUnit("ms")}
@@ -138,7 +140,7 @@ export default function TimestampConvertComponent() {
                   : "text-zinc-400 hover:text-white"
               }`}
             >
-              毫秒 (ms)
+              {t.common.millisecond} (ms)
             </button>
           </div>
         </div>
@@ -148,19 +150,19 @@ export default function TimestampConvertComponent() {
           {/* 时间戳输入 */}
           <div className="rounded-lg border border-zinc-800 p-4">
             <label className="mb-2 block text-sm font-medium text-zinc-400">
-              Unix 时间戳
+              {t.timestampConvert.unixTimestamp}
             </label>
             <div className="flex gap-2">
               <input
                 type="text"
                 value={timestamp}
                 onChange={(e) => setTimestamp(e.target.value)}
-                placeholder={`输入时间戳 (${unit === "s" ? "秒" : "毫秒"})`}
+                placeholder={`${t.timestampConvert.inputTimestamp} (${unit === "s" ? t.common.second : t.common.millisecond})`}
                 className="flex-1 rounded-lg border border-zinc-700 bg-zinc-800 px-4 py-2 font-mono text-white placeholder-zinc-500 focus:border-blue-500 focus:outline-none"
               />
               <Button onClick={timestampToDate} size="sm" className="shrink-0">
                 <ArrowRightLeft className="mr-2 h-4 w-4" />
-                转换
+                {t.common.convert}
               </Button>
               {timestamp && (
                 <Button
@@ -182,19 +184,19 @@ export default function TimestampConvertComponent() {
           {/* 日期时间输入 */}
           <div className="rounded-lg border border-zinc-800 p-4">
             <label className="mb-2 block text-sm font-medium text-zinc-400">
-              日期时间
+              {t.timestampConvert.datetime}
             </label>
             <div className="flex gap-2">
               <input
                 type="text"
                 value={datetime}
                 onChange={(e) => setDatetime(e.target.value)}
-                placeholder="输入日期时间 (如: 2024-01-01 12:00:00)"
+                placeholder={t.timestampConvert.datetimePlaceholder}
                 className="flex-1 rounded-lg border border-zinc-700 bg-zinc-800 px-4 py-2 font-mono text-white placeholder-zinc-500 focus:border-blue-500 focus:outline-none"
               />
               <Button onClick={dateToTimestamp} size="sm" className="shrink-0">
                 <ArrowRightLeft className="mr-2 h-4 w-4" />
-                转换
+                {t.common.convert}
               </Button>
               {datetime && (
                 <Button
@@ -216,28 +218,28 @@ export default function TimestampConvertComponent() {
 
         {/* 常用时间戳参考 */}
         <div className="rounded-lg border border-zinc-800 bg-zinc-900/30 p-4">
-          <h3 className="mb-3 text-sm font-medium text-zinc-400">常用时间戳参考</h3>
+          <h3 className="mb-3 text-sm font-medium text-zinc-400">{t.timestampConvert.commonReference}</h3>
           <div className="grid grid-cols-2 gap-2 text-sm">
             <div className="flex justify-between">
-              <span className="text-zinc-500">今天开始</span>
+              <span className="text-zinc-500">{t.timestampConvert.todayStart}</span>
               <span className="font-mono text-zinc-300">
                 {Math.floor(new Date().setHours(0, 0, 0, 0) / 1000)}
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-zinc-500">今天结束</span>
+              <span className="text-zinc-500">{t.timestampConvert.todayEnd}</span>
               <span className="font-mono text-zinc-300">
                 {Math.floor(new Date().setHours(23, 59, 59, 999) / 1000)}
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-zinc-500">一小时后</span>
+              <span className="text-zinc-500">{t.timestampConvert.oneHourLater}</span>
               <span className="font-mono text-zinc-300">
                 {currentTimestamp + 3600}
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-zinc-500">一天后</span>
+              <span className="text-zinc-500">{t.timestampConvert.oneDayLater}</span>
               <span className="font-mono text-zinc-300">
                 {currentTimestamp + 86400}
               </span>

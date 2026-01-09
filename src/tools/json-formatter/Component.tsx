@@ -4,6 +4,7 @@ import { useState, useCallback } from "react";
 import Editor from "@monaco-editor/react";
 import { Button } from "@/components/ui/button";
 import { Copy, Check, Minimize2, Maximize2, AlertCircle, Trash2 } from "lucide-react";
+import { useLanguage } from "@/i18n";
 
 /**
  * 将 Python 风格的字典字符串转换为标准 JSON
@@ -130,6 +131,7 @@ export default function JsonFormatterComponent() {
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [indentSize, setIndentSize] = useState(2);
+  const { t } = useLanguage();
 
   const formatJson = useCallback(() => {
     if (!input.trim()) {
@@ -144,7 +146,7 @@ export default function JsonFormatterComponent() {
       setOutput(formatted);
       setError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "JSON 解析错误");
+      setError(e instanceof Error ? e.message : t.jsonFormatter.parseError);
       setOutput("");
     }
   }, [input, indentSize]);
@@ -162,7 +164,7 @@ export default function JsonFormatterComponent() {
       setOutput(minified);
       setError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "JSON 解析错误");
+      setError(e instanceof Error ? e.message : t.jsonFormatter.parseError);
       setOutput("");
     }
   }, [input]);
@@ -196,28 +198,28 @@ export default function JsonFormatterComponent() {
         <div className="flex items-center gap-2">
           <Button onClick={formatJson} size="sm" className="gap-2">
             <Maximize2 className="h-4 w-4" />
-            格式化
+            {t.common.format}
           </Button>
           <Button onClick={minifyJson} variant="secondary" size="sm" className="gap-2">
             <Minimize2 className="h-4 w-4" />
-            压缩
+            {t.common.minify}
           </Button>
           <Button onClick={clearAll} variant="ghost" size="sm" className="gap-2 text-zinc-400 hover:text-white">
             <Trash2 className="h-4 w-4" />
-            清空
+            {t.common.clear}
           </Button>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-sm text-zinc-400">缩进:</span>
+          <span className="text-sm text-zinc-400">{t.common.indent}:</span>
           <select
             value={indentSize}
             onChange={(e) => setIndentSize(Number(e.target.value))}
             className="rounded border border-zinc-700 bg-zinc-800 px-2 py-1 text-sm text-white"
           >
-            <option value={2}>2 空格</option>
-            <option value={4}>4 空格</option>
-            <option value={1}>Tab</option>
+            <option value={2}>2 {t.common.spaces}</option>
+            <option value={4}>4 {t.common.spaces}</option>
+            <option value={1}>{t.common.tab}</option>
           </select>
         </div>
 
@@ -231,12 +233,12 @@ export default function JsonFormatterComponent() {
             {copied ? (
               <>
                 <Check className="h-4 w-4 text-green-500" />
-                已复制
+                {t.common.copied}
               </>
             ) : (
               <>
                 <Copy className="h-4 w-4" />
-                复制结果
+                {t.common.copyResult}
               </>
             )}
           </Button>
@@ -256,7 +258,7 @@ export default function JsonFormatterComponent() {
         {/* 输入区 */}
         <div className="flex flex-col overflow-hidden rounded-lg border border-zinc-800">
           <div className="border-b border-zinc-800 bg-zinc-900 px-4 py-2">
-            <span className="text-sm font-medium text-zinc-400">输入 JSON</span>
+            <span className="text-sm font-medium text-zinc-400">{t.jsonFormatter.inputJson}</span>
           </div>
           <div className="flex-1">
             <Editor
@@ -282,7 +284,7 @@ export default function JsonFormatterComponent() {
         {/* 输出区 */}
         <div className="flex flex-col overflow-hidden rounded-lg border border-zinc-800">
           <div className="border-b border-zinc-800 bg-zinc-900 px-4 py-2">
-            <span className="text-sm font-medium text-zinc-400">输出结果</span>
+            <span className="text-sm font-medium text-zinc-400">{t.jsonFormatter.outputResult}</span>
           </div>
           <div className="flex-1">
             <Editor

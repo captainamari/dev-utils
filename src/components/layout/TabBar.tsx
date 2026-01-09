@@ -5,11 +5,13 @@ import { useTabStore } from "@/store/useTabStore";
 import { getTool } from "@/registry";
 import { X } from "lucide-react";
 import { useRef, useEffect } from "react";
+import { useLanguage } from "@/i18n";
 
 export function TabBar() {
   const { openTabIds, activeTabId, setActiveTab, closeTab } = useTabStore();
   const scrollRef = useRef<HTMLDivElement>(null);
   const activeTabRef = useRef<HTMLButtonElement>(null);
+  const { t } = useLanguage();
 
   // 当激活的 Tab 改变时，滚动到可视区域
   useEffect(() => {
@@ -25,7 +27,7 @@ export function TabBar() {
   if (openTabIds.length === 0) {
     return (
       <div className="flex h-10 items-center border-b border-zinc-800 bg-zinc-950 px-4">
-        <span className="text-sm text-zinc-500">选择一个工具开始使用</span>
+        <span className="text-sm text-zinc-500">{t.common.selectTool}</span>
       </div>
     );
   }
@@ -56,7 +58,7 @@ export function TabBar() {
               )}
             >
               <Icon className="h-4 w-4 shrink-0" />
-              <span className="truncate text-sm">{tool.name}</span>
+              <span className="truncate text-sm">{t.tools[tool.id as keyof typeof t.tools]?.name || tool.name}</span>
               <span
                 onClick={(e) => {
                   e.stopPropagation();

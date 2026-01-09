@@ -4,6 +4,7 @@ import { useTabStore } from "@/store/useTabStore";
 import { getTool, getToolsByCategory, categories } from "@/registry";
 import { memo, useMemo } from "react";
 import { Wrench } from "lucide-react";
+import { useLanguage } from "@/i18n";
 
 // 使用 memo 优化渲染
 const ToolPanel = memo(function ToolPanel({
@@ -31,6 +32,7 @@ const ToolPanel = memo(function ToolPanel({
 // 欢迎页面
 function WelcomePage() {
   const { openTab } = useTabStore();
+  const { t } = useLanguage();
   const toolsByCategory = useMemo(() => getToolsByCategory(), []);
   const sortedCategories = useMemo(
     () => [...categories].sort((a, b) => a.order - b.order),
@@ -42,9 +44,9 @@ function WelcomePage() {
       <div className="mb-8 flex h-20 w-20 items-center justify-center rounded-2xl bg-zinc-800/50">
         <Wrench className="h-10 w-10 text-zinc-400" />
       </div>
-      <h1 className="mb-2 text-2xl font-bold text-white">开发者工具集</h1>
+      <h1 className="mb-2 text-2xl font-bold text-white">{t.common.title}</h1>
       <p className="mb-10 text-center text-zinc-400">
-        选择下方工具开始使用，提高你的开发效率
+        {t.common.selectToolHint}
       </p>
 
       <div className="w-full max-w-4xl space-y-8">
@@ -52,14 +54,17 @@ function WelcomePage() {
           const tools = toolsByCategory.get(category.id) || [];
           if (tools.length === 0) return null;
 
+          const categoryName = t.categories[category.id as keyof typeof t.categories] || category.name;
+
           return (
             <div key={category.id}>
               <h2 className="mb-4 text-sm font-medium uppercase tracking-wider text-zinc-500">
-                {category.name}
+                {categoryName}
               </h2>
               <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
                 {tools.map((tool) => {
                   const Icon = tool.icon;
+                  const toolTranslation = t.tools[tool.id as keyof typeof t.tools];
                   return (
                     <button
                       key={tool.id}
@@ -70,8 +75,8 @@ function WelcomePage() {
                         <Icon className="h-5 w-5 text-zinc-300" />
                       </div>
                       <div className="min-w-0">
-                        <p className="font-medium text-white truncate">{tool.name}</p>
-                        <p className="text-sm text-zinc-400 truncate">{tool.description}</p>
+                        <p className="font-medium text-white truncate">{toolTranslation?.name || tool.name}</p>
+                        <p className="text-sm text-zinc-400 truncate">{toolTranslation?.description || tool.description}</p>
                       </div>
                     </button>
                   );

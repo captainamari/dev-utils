@@ -9,8 +9,9 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Wrench } from "lucide-react";
+import { Wrench, Globe } from "lucide-react";
 import { useMemo } from "react";
+import { useLanguage, localeConfigs, type Locale } from "@/i18n";
 
 interface ToolButtonProps {
   tool: ToolDefinition;
@@ -21,6 +22,8 @@ interface ToolButtonProps {
 
 function ToolButton({ tool, isOpen, isActive, onClick }: ToolButtonProps) {
   const Icon = tool.icon;
+  const { t } = useLanguage();
+  const toolTranslation = t.tools[tool.id as keyof typeof t.tools];
 
   return (
     <Tooltip delayDuration={0}>
@@ -48,8 +51,36 @@ function ToolButton({ tool, isOpen, isActive, onClick }: ToolButtonProps) {
         </button>
       </TooltipTrigger>
       <TooltipContent side="right" className="bg-zinc-800 border-zinc-700">
-        <p className="font-medium">{tool.name}</p>
-        <p className="text-xs text-zinc-400">{tool.description}</p>
+        <p className="font-medium">{toolTranslation?.name || tool.name}</p>
+        <p className="text-xs text-zinc-400">{toolTranslation?.description || tool.description}</p>
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
+function LanguageSwitcher() {
+  const { locale, setLocale, localeConfig } = useLanguage();
+
+  const toggleLocale = () => {
+    const nextLocale: Locale = locale === 'zh-CN' ? 'en' : 'zh-CN';
+    setLocale(nextLocale);
+  };
+
+  return (
+    <Tooltip delayDuration={0}>
+      <TooltipTrigger asChild>
+        <button
+          onClick={toggleLocale}
+          className="flex h-10 w-10 items-center justify-center rounded-lg text-zinc-500 transition-all duration-200 hover:bg-zinc-800/80 hover:text-zinc-300"
+        >
+          <span className="text-xs font-medium">{localeConfig.shortName}</span>
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side="right" className="bg-zinc-800 border-zinc-700">
+        <p className="text-xs">{localeConfig.name}</p>
+        <p className="text-xs text-zinc-400">
+          {locale === 'zh-CN' ? 'Click to switch to English' : '点击切换到中文'}
+        </p>
       </TooltipContent>
     </Tooltip>
   );
@@ -57,6 +88,7 @@ function ToolButton({ tool, isOpen, isActive, onClick }: ToolButtonProps) {
 
 export function Sidebar() {
   const { openTabIds, activeTabId, openTab } = useTabStore();
+  const { t } = useLanguage();
 
   const toolsByCategory = useMemo(() => getToolsByCategory(), []);
 
@@ -80,6 +112,8 @@ export function Sidebar() {
             const tools = toolsByCategory.get(category.id) || [];
             if (tools.length === 0) return null;
 
+            const categoryName = t.categories[category.id as keyof typeof t.categories] || category.name;
+
             return (
               <div key={category.id} className="mb-2">
                 {/* 分类标题 */}
@@ -87,12 +121,12 @@ export function Sidebar() {
                   <TooltipTrigger asChild>
                     <div className="mb-1 flex h-6 items-center justify-center">
                       <span className="text-[10px] font-medium uppercase tracking-wider text-zinc-600">
-                        {category.name.slice(0, 2)}
+                        {categoryName.slice(0, 2)}
                       </span>
                     </div>
                   </TooltipTrigger>
                   <TooltipContent side="right" className="bg-zinc-800 border-zinc-700">
-                    <p className="text-xs">{category.name}</p>
+                    <p className="text-xs">{categoryName}</p>
                   </TooltipContent>
                 </Tooltip>
 
@@ -113,6 +147,11 @@ export function Sidebar() {
           })}
         </div>
       </ScrollArea>
+
+      {/* 底部语言切换按钮 */}
+      <div className="flex items-center justify-center border-t border-zinc-800 py-2">
+        <LanguageSwitcher />
+      </div>
     </div>
   );
 }

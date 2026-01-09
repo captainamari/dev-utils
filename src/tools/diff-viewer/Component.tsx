@@ -5,6 +5,7 @@ import { DiffEditor } from "@monaco-editor/react";
 import { ToolLayout, ToolHeader, ActionGroup } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { Columns2, Rows2, Eye, EyeOff, Trash2 } from "lucide-react";
+import { useLanguage } from "@/i18n";
 
 export default function DiffViewerComponent() {
   const [original, setOriginal] = useState("");
@@ -12,9 +13,10 @@ export default function DiffViewerComponent() {
   const [renderSideBySide, setRenderSideBySide] = useState(true);
   const [ignoreTrimWhitespace, setIgnoreTrimWhitespace] = useState(false);
   const [language, setLanguage] = useState("plaintext");
+  const { t } = useLanguage();
 
   const languageOptions = [
-    { value: "plaintext", label: "纯文本" },
+    { value: "plaintext", label: t.diffViewer.plaintext },
     { value: "javascript", label: "JavaScript" },
     { value: "typescript", label: "TypeScript" },
     { value: "json", label: "JSON" },
@@ -47,7 +49,7 @@ export default function DiffViewerComponent() {
       <ToolHeader className="border-b border-zinc-800 bg-zinc-950 px-4 py-3 mb-0">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            <span className="text-sm text-zinc-400">语言:</span>
+            <span className="text-sm text-zinc-400">{t.diffViewer.language}:</span>
             <select
               value={language}
               onChange={(e) => setLanguage(e.target.value)}
@@ -67,7 +69,7 @@ export default function DiffViewerComponent() {
               variant={renderSideBySide ? "secondary" : "ghost"}
               size="sm"
               className="h-7 px-2"
-              title="并排模式"
+              title={t.diffViewer.sideBySide}
             >
               <Columns2 className="h-4 w-4" />
             </Button>
@@ -76,7 +78,7 @@ export default function DiffViewerComponent() {
               variant={!renderSideBySide ? "secondary" : "ghost"}
               size="sm"
               className="h-7 px-2"
-              title="内联模式"
+              title={t.diffViewer.inline}
             >
               <Rows2 className="h-4 w-4" />
             </Button>
@@ -93,17 +95,17 @@ export default function DiffViewerComponent() {
             ) : (
               <Eye className="h-4 w-4" />
             )}
-            {ignoreTrimWhitespace ? "忽略空格" : "显示空格"}
+            {ignoreTrimWhitespace ? t.diffViewer.ignoreWhitespace : t.diffViewer.showWhitespace}
           </Button>
         </div>
 
         <ActionGroup className="ml-auto">
           <Button onClick={handleSwap} variant="outline" size="sm">
-            交换
+            {t.common.swap}
           </Button>
           <Button onClick={handleClear} variant="outline" size="sm">
             <Trash2 className="mr-2 h-4 w-4" />
-            清空
+            {t.common.clear}
           </Button>
         </ActionGroup>
       </ToolHeader>
@@ -111,10 +113,10 @@ export default function DiffViewerComponent() {
       {/* 标签头 */}
       <div className="flex border-b border-zinc-800 bg-zinc-950">
         <div className="flex-1 border-r border-zinc-800 px-4 py-2">
-          <span className="text-sm font-medium text-zinc-400">原始文本</span>
+          <span className="text-sm font-medium text-zinc-400">{t.diffViewer.originalText}</span>
         </div>
         <div className="flex-1 px-4 py-2">
-          <span className="text-sm font-medium text-zinc-400">修改后文本</span>
+          <span className="text-sm font-medium text-zinc-400">{t.diffViewer.modifiedText}</span>
         </div>
       </div>
 
